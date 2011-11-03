@@ -295,6 +295,296 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy handling a request to be redirected for authentication with identifier in body': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.authenticate = function(identifier, immediate, callback) {
+        callback(null, 'http://provider.example.com/openid' + '#' + identifier);
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.redirect = function(url) {
+          req.redirectURL = url;
+          self.callback(null, req);
+        }
+        
+        req.body = {};
+        req.body['openid_identifier'] = 'http://www.example.me/'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call success or fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should redirect to user OpenID provider URL' : function(err, req) {
+        assert.equal(req.redirectURL, 'http://provider.example.com/openid#http://www.example.me/');
+      },
+    },
+  },
+  
+  'strategy handling a request to be redirected for authentication with identifier in query': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.authenticate = function(identifier, immediate, callback) {
+        callback(null, 'http://provider.example.com/openid' + '#' + identifier);
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.redirect = function(url) {
+          req.redirectURL = url;
+          self.callback(null, req);
+        }
+        
+        req.query = {};
+        req.query['openid_identifier'] = 'http://www.example.me/'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call success or fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should redirect to user OpenID provider URL' : function(err, req) {
+        assert.equal(req.redirectURL, 'http://provider.example.com/openid#http://www.example.me/');
+      },
+    },
+  },
+  
+  'strategy handling a request to be redirected for authentication with identifier in body and identifierField option set': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          identifierField: 'identifier',
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.authenticate = function(identifier, immediate, callback) {
+        callback(null, 'http://provider.example.com/openid' + '#' + identifier);
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.redirect = function(url) {
+          req.redirectURL = url;
+          self.callback(null, req);
+        }
+        
+        req.body = {};
+        req.body['identifier'] = 'http://www.example.me/'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call success or fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should redirect to user OpenID provider URL' : function(err, req) {
+        assert.equal(req.redirectURL, 'http://provider.example.com/openid#http://www.example.me/');
+      },
+    },
+  },
+  
+  'strategy handling a request to be redirected with an undefined identifier': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.authenticate = function(identifier, immediate, callback) {
+        callback(null, 'http://provider.example.com/openid');
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.error = function(err) {
+          self.callback(null, req);
+        }
+        
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call success or fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should call error' : function(err, req) {
+        assert.isNotNull(req);
+      },
+    },
+  },
+  
+  'strategy handling a request to be redirected that encouters an error during discovery': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.authenticate = function(identifier, immediate, callback) {
+        callback(new Error('something went wrong'));
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.error = function(err) {
+          self.callback(null, req);
+        }
+        
+        req.body = {};
+        req.body['openid_identifier'] = 'http://www.example.me/'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call success or fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should call error' : function(err, req) {
+        assert.isNotNull(req);
+      },
+    },
+  },
+  
+  'strategy handling a request to be redirected that does not find a provider during discovery': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.authenticate = function(identifier, immediate, callback) {
+        callback(null, null);
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.error = function(err) {
+          self.callback(null, req);
+        }
+        
+        req.body = {};
+        req.body['openid_identifier'] = 'http://www.example.me/'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call success or fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should call error' : function(err, req) {
+        assert.isNotNull(req);
+      },
+    },
+  },
+  
   'strategy constructed without a validate callback': {
     'should throw an error': function (strategy) {
       assert.throws(function() {
