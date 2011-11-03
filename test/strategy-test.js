@@ -66,6 +66,124 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy handling an authorized request with simple registration extensions': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, profile, done) {
+          done(null, { identifier: identifier, displayName: profile.displayName, emails: profile.emails });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username',
+          nickname: 'Johnny',
+          email: 'username@example.com',
+          fullname: 'John Doe',
+          dob: '1955-05-25',
+          gender: 'M',
+          postcode: '90210',
+          country: 'US',
+          language: 'EN',
+          timezone: 'America/Los_Angeles'
+        });
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          req.user = user;
+          self.callback(null, req);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should parse profile' : function(err, req) {
+        assert.equal(req.user.displayName, 'John Doe');
+        assert.length(req.user.emails, 1);
+        assert.equal(req.user.emails[0].value, 'username@example.com');
+      },
+    },
+  },
+  
+  'strategy handling an authorized request with attribute exchange extensions': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, profile, done) {
+          done(null, { identifier: identifier, displayName: profile.displayName, name: profile.name, emails: profile.emails });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username',
+          firstname: 'John',
+          lastname: 'Doe',
+          email: 'username@example.com'
+        });
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          req.user = user;
+          self.callback(null, req);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should parse profile' : function(err, req) {
+        assert.equal(req.user.displayName, 'John Doe');
+        assert.equal(req.user.name.familyName, 'Doe');
+        assert.equal(req.user.name.givenName, 'John');
+        assert.length(req.user.emails, 1);
+        assert.equal(req.user.emails[0].value, 'username@example.com');
+      },
+    },
+  },
+  
   'strategy handling an authorized request that encounters an error while verifying assertion': {
     topic: function() {
       var strategy = new OpenIDStrategy({
