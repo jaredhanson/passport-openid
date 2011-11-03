@@ -1,0 +1,17 @@
+{
+  "name": "passport-openid",
+  "version": "0.1.0",
+  "description": "OpenID authentication strategy for Passport.",
+  "author": "Jared Hanson <jaredhanson@gmail.com> (http://www.jaredhanson.net/)",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/jaredhanson/passport-openid.git"
+  },
+  "main": "./lib/passport-openid",
+  "dependencies": {
+    "passport": ">= 0.1.3",
+    "openid": ">= 0.3.1"
+  },
+  "engines": { "node": ">= 0.4.0" },
+  "keywords": ["passport", "openid", "auth", "authn", "authentication", "identity"]
+}
