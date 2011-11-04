@@ -561,6 +561,54 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy handling a request to be redirected for authentication with provider URL option set': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          providerURL: 'http://provider.example.net/openid',
+          returnURL: 'https://www.example.com/auth/openid/return'
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.authenticate = function(identifier, immediate, callback) {
+        callback(null, 'http://provider.example.com/openid' + '#' + identifier);
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.redirect = function(url) {
+          req.redirectURL = url;
+          self.callback(null, req);
+        }
+        
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call success or fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should redirect to user OpenID provider URL' : function(err, req) {
+        assert.equal(req.redirectURL, 'http://provider.example.com/openid#http://provider.example.net/openid');
+      },
+    },
+  },
+  
   'strategy handling a request to be redirected with an undefined identifier': {
     topic: function() {
       var strategy = new OpenIDStrategy({
