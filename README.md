@@ -53,6 +53,18 @@ application:
 
 For a complete, working example, refer to the [signon example](https://github.com/jaredhanson/passport-openid/tree/master/examples/signon).
 
+## Strategies using OpenID
+
+<table>
+  <thead>
+    <tr><th>Strategy</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><a href="https://github.com/jaredhanson/passport-google">Google</a></td></tr>
+    <tr><td><a href="https://github.com/jaredhanson/passport-yahoo">Yahoo!</a></td></tr>
+  </tbody>
+</table>
+
 ## Credits
 
   - [Jared Hanson](http://github.com/jaredhanson)
