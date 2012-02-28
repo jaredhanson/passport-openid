@@ -49,7 +49,7 @@ application:
         res.redirect('/');
       });
 
-#### Examples
+## Examples
 
 For a complete, working example, refer to the [signon example](https://github.com/jaredhanson/passport-openid/tree/master/examples/signon).
 
@@ -64,6 +64,13 @@ For a complete, working example, refer to the [signon example](https://github.co
     <tr><td><a href="https://github.com/jaredhanson/passport-yahoo">Yahoo!</a></td></tr>
   </tbody>
 </table>
+
+## Tests
+
+    $ npm install --dev
+    $ make test
+
+[![Build Status](https://secure.travis-ci.org/jaredhanson/passport-openid.png)](http://travis-ci.org/jaredhanson/passport-openid)
 
 ## Credits
 
