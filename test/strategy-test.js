@@ -121,7 +121,7 @@ vows.describe('OpenIDStrategy').addBatch({
       },
       'should parse profile' : function(err, req) {
         assert.equal(req.user.displayName, 'John Doe');
-        assert.length(req.user.emails, 1);
+        assert.lengthOf(req.user.emails, 1);
         assert.equal(req.user.emails[0].value, 'username@example.com');
       },
     },
@@ -178,7 +178,7 @@ vows.describe('OpenIDStrategy').addBatch({
         assert.equal(req.user.displayName, 'John Doe');
         assert.equal(req.user.name.familyName, 'Doe');
         assert.equal(req.user.name.givenName, 'John');
-        assert.length(req.user.emails, 1);
+        assert.lengthOf(req.user.emails, 1);
         assert.equal(req.user.emails[0].value, 'username@example.com');
       },
     },
