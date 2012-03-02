@@ -2,10 +2,13 @@
   "name": "passport-openid",
   "version": "0.1.1",
   "description": "OpenID authentication strategy for Passport.",
-  "author": "Jared Hanson <jaredhanson@gmail.com> (http://www.jaredhanson.net/)",
+  "author": { "name": "Jared Hanson", "email": "jaredhanson@gmail.com", "url": "http://www.jaredhanson.net/" },
   "repository": {
     "type": "git",
-    "url": "http://github.com/jaredhanson/passport-openid.git"
+    "url": "git://github.com/jaredhanson/passport-openid.git"
+  },
+  "bugs": {
+    "url": "http://github.com/jaredhanson/passport-openid/issues"
   },
   "main": "./lib/passport-openid",
   "dependencies": {
@@ -20,5 +23,9 @@
     "test": "NODE_PATH=lib node_modules/.bin/vows test/*-test.js"
   },
   "engines": { "node": ">= 0.4.0" },
+  "licenses": [ {
+    "type": "MIT",
+    "url": "http://www.opensource.org/licenses/MIT" 
+  } ],
   "keywords": ["passport", "openid", "auth", "authn", "authentication", "identity"]
 }
