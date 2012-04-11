@@ -67,6 +67,55 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy handling an authorized request with addtional info': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier }, { message: 'Welcome!' });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username' });
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user, info) {
+          req.user = user;
+          self.callback(null, req, info);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should pass additional info' : function(err, user, info) {
+        assert.equal(info.message, 'Welcome!');
+      },
+    },
+  },
+  
   'strategy handling an authorized request with simple registration extensions': {
     topic: function() {
       var strategy = new OpenIDStrategy({
@@ -322,6 +371,54 @@ vows.describe('OpenIDStrategy').addBatch({
       },
       'should call fail' : function(err, req) {
         assert.isNotNull(req);
+      },
+    },
+  },
+  
+  'strategy handling an authorized request that is not validated with addtional info': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, false, { message: 'Unwelcome.' });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username' });
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          self.callback(new Error('should not be called'));
+        }
+        strategy.fail = function(info) {
+          self.callback(null, req, info);
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call success' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should call fail' : function(err, req) {
+        assert.isNotNull(req);
+      },
+      'should pass additional info' : function(err, req, info) {
+        assert.equal(info.message, 'Unwelcome.');
       },
     },
   },
