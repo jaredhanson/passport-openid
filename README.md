@@ -3,6 +3,12 @@
 [Passport](https://github.com/jaredhanson/passport) strategy for authenticating
 with [OpenID](http://openid.net/).
 
+This module lets you authenticate using OpenID in your Node.js applications.  By
+plugging into Passport, OpenID authentication can be easily and unobtrusively
+integrated into any application or framework that supports
+[Connect](http://www.senchalabs.org/connect/)-style middleware, including
+[Express](http://expressjs.com/).
+
 ## Installation
 
     $ npm install passport-openid
@@ -61,6 +67,7 @@ For a complete, working example, refer to the [signon example](https://github.co
   </thead>
   <tbody>
     <tr><td><a href="https://github.com/jaredhanson/passport-google">Google</a></td></tr>
+    <tr><td><a href="https://github.com/liamcurry/passport-steam">Steam</a></td></tr>
     <tr><td><a href="https://github.com/jaredhanson/passport-yahoo">Yahoo!</a></td></tr>
   </tbody>
 </table>
