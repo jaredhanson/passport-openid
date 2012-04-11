@@ -394,8 +394,8 @@ vows.describe('OpenIDStrategy').addBatch({
         strategy.success = function(user) {
           self.callback(new Error('should not be called'));
         }
-        strategy.fail = function() {
-          self.callback(null, req);
+        strategy.fail = function(info) {
+          self.callback(null, req, info);
         }
         
         req.query = {};
@@ -410,6 +410,9 @@ vows.describe('OpenIDStrategy').addBatch({
       },
       'should call fail' : function(err, req) {
         assert.isNotNull(req);
+      },
+      'should pass canceled message as additional info' : function(err, req, info) {
+        assert.equal(info.message, 'OpenID authentication canceled');
       },
     },
   },
