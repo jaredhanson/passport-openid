@@ -2,6 +2,7 @@ var vows = require('vows');
 var assert = require('assert');
 var util = require('util');
 var OpenIDStrategy = require('passport-openid/strategy');
+var BadRequestError = require('passport-openid/errors/badrequesterror');
 
 
 vows.describe('OpenIDStrategy').addBatch({
@@ -634,11 +635,11 @@ vows.describe('OpenIDStrategy').addBatch({
         strategy.success = function(user) {
           self.callback(new Error('should not be called'));
         }
-        strategy.fail = function() {
-          self.callback(new Error('should not be called'));
+        strategy.fail = function(info) {
+          self.callback(null, req, info);
         }
         strategy.error = function(err) {
-          self.callback(null, req);
+          self.callback(new Error('should not be called'));
         }
         
         process.nextTick(function () {
@@ -646,11 +647,15 @@ vows.describe('OpenIDStrategy').addBatch({
         });
       },
       
-      'should not call success or fail' : function(err, req) {
+      'should not call success or error' : function(err, req) {
         assert.isNull(err);
       },
-      'should call error' : function(err, req) {
+      'should call fail' : function(err, req) {
         assert.isNotNull(req);
+      },
+      'should pass BadReqestError as additional info' : function(err, req, info) {
+        assert.instanceOf(info, Error);
+        assert.instanceOf(info, BadRequestError);
       },
     },
   },

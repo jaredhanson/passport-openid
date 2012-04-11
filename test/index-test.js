@@ -10,6 +10,10 @@ vows.describe('passport-openid').addBatch({
     'should report a version': function (x) {
       assert.isString(openid.version);
     },
+    
+    'should export BadRequestError': function (x) {
+      assert.isFunction(openid.BadRequestError);
+    },
   },
   
 }).export(module);
