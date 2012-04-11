@@ -13,6 +13,7 @@ vows.describe('passport-openid').addBatch({
     
     'should export BadRequestError': function (x) {
       assert.isFunction(openid.BadRequestError);
+      assert.isFunction(openid.InternalOpenIDError);
     },
   },
   
