@@ -67,6 +67,57 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy handling an authorized request using req argument to callback': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+          passReqToCallback: true
+        },
+        function(req, identifier, done) {
+          done(null, { foo: req.foo, identifier: identifier });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username' });
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        req.foo = 'bar';
+        strategy.success = function(user) {
+          req.user = user;
+          self.callback(null, req);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should have request details' : function(err, req) {
+        assert.equal(req.user.foo, 'bar');
+      },
+    },
+  },
+  
   'strategy handling an authorized request with addtional info': {
     topic: function() {
       var strategy = new OpenIDStrategy({
@@ -286,6 +337,137 @@ vows.describe('OpenIDStrategy').addBatch({
       },
       'should authenticate' : function(err, req) {
         assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should parse profile' : function(err, req) {
+        assert.equal(req.user.displayName, 'John Doe');
+        assert.equal(req.user.name.familyName, 'Doe');
+        assert.equal(req.user.name.givenName, 'John');
+        assert.lengthOf(req.user.emails, 1);
+        assert.equal(req.user.emails[0].value, 'username@example.com');
+      },
+    },
+  },
+  
+  'strategy handling an authorized request with attribute exchange extensions using req argument to callback': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+          passReqToCallback: true
+        },
+        function(req, identifier, profile, done) {
+          done(null, { foo: req.foo, identifier: identifier, displayName: profile.displayName, name: profile.name, emails: profile.emails });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username',
+          firstname: 'John',
+          lastname: 'Doe',
+          email: 'username@example.com'
+        });
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        req.foo = 'bar';
+        strategy.success = function(user) {
+          req.user = user;
+          self.callback(null, req);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should have request details' : function(err, req) {
+        assert.equal(req.user.foo, 'bar');
+      },
+      'should parse profile' : function(err, req) {
+        assert.equal(req.user.displayName, 'John Doe');
+        assert.equal(req.user.name.familyName, 'Doe');
+        assert.equal(req.user.name.givenName, 'John');
+        assert.lengthOf(req.user.emails, 1);
+        assert.equal(req.user.emails[0].value, 'username@example.com');
+      },
+    },
+  },
+  
+  'strategy handling an authorized request with profile option and req argument to callback using arguments rather than arity': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+          profile: true,
+          passReqToCallback: true
+        },
+        function() {
+          // identifier, profile, done
+          var req = arguments[0];
+          var identifier = arguments[1];
+          var profile = arguments[2];
+          var done = arguments[3];
+          
+          done(null, { foo: req.foo, identifier: identifier, displayName: profile.displayName, name: profile.name, emails: profile.emails });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username',
+          firstname: 'John',
+          lastname: 'Doe',
+          email: 'username@example.com'
+        });
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        req.foo = 'bar';
+        strategy.success = function(user) {
+          req.user = user;
+          self.callback(null, req);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should have request details' : function(err, req) {
+        assert.equal(req.user.foo, 'bar');
       },
       'should parse profile' : function(err, req) {
         assert.equal(req.user.displayName, 'John Doe');
