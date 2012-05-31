@@ -33,6 +33,32 @@ supplied to specify a return URL and realm.
       }
     ));
 
+#### Using mixins with [node-openid](https://github.com/havard/node-openid/)
+
+Exposure of the [node-openid](https://github.com/havard/node-openid/) module
+is primarily intended to allow association state to be saved using different
+storage mechanisms.
+
+Extending the previous example:
+
+    passport.use(new OpenIDStrategy({
+        returnURL: 'http://localhost:3000/auth/openid/return',
+        realm: 'http://localhost:3000/'
+      },
+      function(identifier, done) {
+        User.findByOpenID(identifier, function (err, user) {
+          done(err, user);
+        });
+      }
+    ).addOpenIDMixins({
+      saveAssociation: function(provider, type, handle, secret, expiry_time_in_seconds, callback) {
+        // custom storage implementation
+      },
+      loadAssociation: function(handle, callback) {
+        // custom storage retrieval implementation
+      }
+    }));
+
 #### Authenticate Requests
 
 Use `passport.authenticate()`, specifying the `'openid'` strategy, to
