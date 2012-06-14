@@ -1,6 +1,7 @@
 var vows = require('vows');
 var assert = require('assert');
 var util = require('util');
+var openid = require('openid');
 var OpenIDStrategy = require('passport-openid/strategy');
 var BadRequestError = require('passport-openid/errors/badrequesterror');
 
@@ -1097,6 +1098,96 @@ vows.describe('OpenIDStrategy').addBatch({
       },
       'should call error' : function(err, req) {
         assert.isNotNull(req);
+      },
+    },
+  },
+  
+  'strategy with loadDiscoveredInfo function': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      strategy.loadDiscoveredInfo(function(identifier, done) {
+        var provider = { endpoint: 'https://www.google.com/accounts/o8/ud',
+          version: 'http://specs.openid.net/auth/2.0',
+          localIdentifier: 'http://www.google.com/profiles/jaredhanson',
+          claimedIdentifier: 'http://jaredhanson.net' };
+        
+        strategy._args = {};
+        strategy._args.identifier = identifier;
+        done(null, provider);
+      });
+      return strategy;
+    },
+    
+    'should alias function' : function(strategy) {
+      assert.strictEqual(strategy.loadDiscoveredInfo, strategy.loadDiscoveredInformation);
+    },
+    
+    'after calling openid.loadDiscoveredInformation': {
+      topic: function(strategy) {
+        var self = this;
+        var key = 'http://jaredhanson.net';
+        
+        openid.loadDiscoveredInformation(key, function(err, provider) {
+          self.callback(null, strategy, provider);
+        });
+      },
+      
+      'should call registered function' : function(err, strategy) {
+        assert.equal(strategy._args.identifier, 'http://jaredhanson.net');
+      },
+      'should supply provider' : function(err, strategy, provider) {
+        assert.equal(provider.endpoint, 'https://www.google.com/accounts/o8/ud');
+      },
+    },
+  },
+  
+  'strategy with saveDiscoveredInfo function': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      strategy.saveDiscoveredInfo(function(identifier, provider, done) {
+        strategy._args = {};
+        strategy._args.identifier = identifier;
+        strategy._args.provider = provider;
+        done();
+      });
+      return strategy;
+    },
+    
+    'should alias function' : function(strategy) {
+      assert.strictEqual(strategy.saveDiscoveredInfo, strategy.saveDiscoveredInformation);
+    },
+    
+    'after calling openid.saveDiscoveredInformation': {
+      topic: function(strategy) {
+        var self = this;
+        var key = 'http://jaredhanson.net';
+        var provider = { endpoint: 'https://www.google.com/accounts/o8/ud',
+          version: 'http://specs.openid.net/auth/2.0',
+          localIdentifier: 'http://www.google.com/profiles/jaredhanson',
+          claimedIdentifier: 'http://jaredhanson.net' };
+        
+        openid.saveDiscoveredInformation(key, provider, function() {
+          self.callback(null, strategy);
+        });
+      },
+      
+      'should call registered function' : function(err, strategy) {
+        assert.equal(strategy._args.identifier, 'http://jaredhanson.net');
+        assert.equal(strategy._args.provider.endpoint, 'https://www.google.com/accounts/o8/ud');
       },
     },
   },
