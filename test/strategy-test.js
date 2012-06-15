@@ -1102,6 +1102,55 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy with saveAssociation function': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      strategy.saveAssociation(function(handle, provider, algorithm, secret, expiresIn, done) {
+        strategy._args = {};
+        strategy._args.handle = handle;
+        strategy._args.provider = provider;
+        strategy._args.algorithm = algorithm;
+        strategy._args.secret = secret;
+        strategy._args.expiresIn = expiresIn;
+        done();
+      });
+      return strategy;
+    },
+    
+    'after calling openid.saveAssociation': {
+      topic: function(strategy) {
+        var self = this;
+        var provider = { endpoint: 'https://www.google.com/accounts/o8/ud',
+          version: 'http://specs.openid.net/auth/2.0',
+          localIdentifier: 'http://www.google.com/profiles/jaredhanson',
+          claimedIdentifier: 'http://jaredhanson.net' };
+        var hashAlgorithm = 'sha256';
+        var handle = 'foo-xyz-123';
+        var secret = 'shh-its-secret';
+        var expires = 46799;
+        
+        openid.saveAssociation(provider, hashAlgorithm, handle, secret, expires, function() {
+          self.callback(null, strategy);
+        });
+      },
+      
+      'should call registered function' : function(err, strategy) {
+        assert.equal(strategy._args.handle, 'foo-xyz-123');
+        assert.equal(strategy._args.provider.endpoint, 'https://www.google.com/accounts/o8/ud');
+        assert.equal(strategy._args.algorithm, 'sha256');
+        assert.equal(strategy._args.secret, 'shh-its-secret');
+        assert.equal(strategy._args.expiresIn, 46799);
+      },
+    },
+  },
+  
   'strategy with loadDiscoveredInfo function': {
     topic: function() {
       var strategy = new OpenIDStrategy({
