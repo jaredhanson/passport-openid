@@ -1102,50 +1102,6 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
-  'strategy with loadAssociation function': {
-    topic: function() {
-      var strategy = new OpenIDStrategy({
-          returnURL: 'https://www.example.com/auth/openid/return',
-        },
-        function(identifier, done) {
-          done(null, { identifier: identifier });
-        }
-      );
-      
-      strategy.loadAssociation(function(handle, done) {
-        var provider = { endpoint: 'https://www.google.com/accounts/o8/ud',
-          version: 'http://specs.openid.net/auth/2.0',
-          localIdentifier: 'http://www.google.com/profiles/jaredhanson',
-          claimedIdentifier: 'http://jaredhanson.net' };
-        
-        strategy._args = {};
-        strategy._args.handle = handle;
-        done(null, provider, 'sha256', 'shh-its-secret');
-      });
-      return strategy;
-    },
-    
-    'after calling openid.loadAssociation': {
-      topic: function(strategy) {
-        var self = this;
-        var handle = 'foo-xyz-123';
-        
-        openid.loadAssociation(handle, function(err, association) {
-          self.callback(null, strategy, association);
-        });
-      },
-      
-      'should call registered function' : function(err, strategy) {
-        assert.equal(strategy._args.handle, 'foo-xyz-123');
-      },
-      'should supply provider' : function(err, strategy, association) {
-        assert.equal(association.provider.endpoint, 'https://www.google.com/accounts/o8/ud');
-        assert.equal(association.type, 'sha256');
-        assert.equal(association.secret, 'shh-its-secret');
-      },
-    },
-  },
-  
   'strategy with saveAssociation function': {
     topic: function() {
       var strategy = new OpenIDStrategy({
@@ -1195,7 +1151,7 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
-  'strategy with loadDiscoveredInfo function': {
+  'strategy with loadAssociation function': {
     topic: function() {
       var strategy = new OpenIDStrategy({
           returnURL: 'https://www.example.com/auth/openid/return',
@@ -1205,38 +1161,36 @@ vows.describe('OpenIDStrategy').addBatch({
         }
       );
       
-      strategy.loadDiscoveredInfo(function(identifier, done) {
+      strategy.loadAssociation(function(handle, done) {
         var provider = { endpoint: 'https://www.google.com/accounts/o8/ud',
           version: 'http://specs.openid.net/auth/2.0',
           localIdentifier: 'http://www.google.com/profiles/jaredhanson',
           claimedIdentifier: 'http://jaredhanson.net' };
         
         strategy._args = {};
-        strategy._args.identifier = identifier;
-        done(null, provider);
+        strategy._args.handle = handle;
+        done(null, provider, 'sha256', 'shh-its-secret');
       });
       return strategy;
     },
     
-    'should alias function' : function(strategy) {
-      assert.strictEqual(strategy.loadDiscoveredInfo, strategy.loadDiscoveredInformation);
-    },
-    
-    'after calling openid.loadDiscoveredInformation': {
+    'after calling openid.loadAssociation': {
       topic: function(strategy) {
         var self = this;
-        var key = 'http://jaredhanson.net';
+        var handle = 'foo-xyz-123';
         
-        openid.loadDiscoveredInformation(key, function(err, provider) {
-          self.callback(null, strategy, provider);
+        openid.loadAssociation(handle, function(err, association) {
+          self.callback(null, strategy, association);
         });
       },
       
       'should call registered function' : function(err, strategy) {
-        assert.equal(strategy._args.identifier, 'http://jaredhanson.net');
+        assert.equal(strategy._args.handle, 'foo-xyz-123');
       },
-      'should supply provider' : function(err, strategy, provider) {
-        assert.equal(provider.endpoint, 'https://www.google.com/accounts/o8/ud');
+      'should supply provider' : function(err, strategy, association) {
+        assert.equal(association.provider.endpoint, 'https://www.google.com/accounts/o8/ud');
+        assert.equal(association.type, 'sha256');
+        assert.equal(association.secret, 'shh-its-secret');
       },
     },
   },
@@ -1281,6 +1235,52 @@ vows.describe('OpenIDStrategy').addBatch({
       'should call registered function' : function(err, strategy) {
         assert.equal(strategy._args.identifier, 'http://jaredhanson.net');
         assert.equal(strategy._args.provider.endpoint, 'https://www.google.com/accounts/o8/ud');
+      },
+    },
+  },
+  
+  'strategy with loadDiscoveredInfo function': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      strategy.loadDiscoveredInfo(function(identifier, done) {
+        var provider = { endpoint: 'https://www.google.com/accounts/o8/ud',
+          version: 'http://specs.openid.net/auth/2.0',
+          localIdentifier: 'http://www.google.com/profiles/jaredhanson',
+          claimedIdentifier: 'http://jaredhanson.net' };
+        
+        strategy._args = {};
+        strategy._args.identifier = identifier;
+        done(null, provider);
+      });
+      return strategy;
+    },
+    
+    'should alias function' : function(strategy) {
+      assert.strictEqual(strategy.loadDiscoveredInfo, strategy.loadDiscoveredInformation);
+    },
+    
+    'after calling openid.loadDiscoveredInformation': {
+      topic: function(strategy) {
+        var self = this;
+        var key = 'http://jaredhanson.net';
+        
+        openid.loadDiscoveredInformation(key, function(err, provider) {
+          self.callback(null, strategy, provider);
+        });
+      },
+      
+      'should call registered function' : function(err, strategy) {
+        assert.equal(strategy._args.identifier, 'http://jaredhanson.net');
+      },
+      'should supply provider' : function(err, strategy, provider) {
+        assert.equal(provider.endpoint, 'https://www.google.com/accounts/o8/ud');
       },
     },
   },
