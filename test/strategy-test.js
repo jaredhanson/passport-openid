@@ -1102,6 +1102,50 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy with loadAssociation function': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+        },
+        function(identifier, done) {
+          done(null, { identifier: identifier });
+        }
+      );
+      
+      strategy.loadAssociation(function(handle, done) {
+        var provider = { endpoint: 'https://www.google.com/accounts/o8/ud',
+          version: 'http://specs.openid.net/auth/2.0',
+          localIdentifier: 'http://www.google.com/profiles/jaredhanson',
+          claimedIdentifier: 'http://jaredhanson.net' };
+        
+        strategy._args = {};
+        strategy._args.handle = handle;
+        done(null, provider, 'sha256', 'shh-its-secret');
+      });
+      return strategy;
+    },
+    
+    'after calling openid.loadAssociation': {
+      topic: function(strategy) {
+        var self = this;
+        var handle = 'foo-xyz-123';
+        
+        openid.loadAssociation(handle, function(err, association) {
+          self.callback(null, strategy, association);
+        });
+      },
+      
+      'should call registered function' : function(err, strategy) {
+        assert.equal(strategy._args.handle, 'foo-xyz-123');
+      },
+      'should supply provider' : function(err, strategy, association) {
+        assert.equal(association.provider.endpoint, 'https://www.google.com/accounts/o8/ud');
+        assert.equal(association.type, 'sha256');
+        assert.equal(association.secret, 'shh-its-secret');
+      },
+    },
+  },
+  
   'strategy with saveAssociation function': {
     topic: function() {
       var strategy = new OpenIDStrategy({
