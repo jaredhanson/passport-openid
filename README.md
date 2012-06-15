@@ -33,32 +33,6 @@ supplied to specify a return URL and realm.
       }
     ));
 
-#### Using mixins with [node-openid](https://github.com/havard/node-openid/)
-
-Exposure of the [node-openid](https://github.com/havard/node-openid/) module
-is primarily intended to allow association state to be saved using different
-storage mechanisms.
-
-Extending the previous example:
-
-    passport.use(new OpenIDStrategy({
-        returnURL: 'http://localhost:3000/auth/openid/return',
-        realm: 'http://localhost:3000/'
-      },
-      function(identifier, done) {
-        User.findByOpenID(identifier, function (err, user) {
-          done(err, user);
-        });
-      }
-    ).addOpenIDMixins({
-      saveAssociation: function(provider, type, handle, secret, expiry_time_in_seconds, callback) {
-        // custom storage implementation
-      },
-      loadAssociation: function(handle, callback) {
-        // custom storage retrieval implementation
-      }
-    }));
-
 #### Authenticate Requests
 
 Use `passport.authenticate()`, specifying the `'openid'` strategy, to
@@ -80,6 +54,29 @@ application:
         // Successful authentication, redirect home.
         res.redirect('/');
       });
+      
+#### Saving Associations
+
+Associations between a relying party and an OpenID provider are used to verify
+subsequent protocol messages and reduce round trips.  In order to take advantage
+of this, an application must store these associations.  This can be done by
+registering functions with `saveAssociation` and `loadAssociation`.
+
+    strategy.saveAssociation(function(handle, provider, algorithm, secret, expiresIn, done) {
+      // custom storage implementation
+      saveAssoc(handle, provider, algorithm, secret, expiresIn, function(err) {
+        if (err) { return done(err) }
+        return done();
+      });
+    });
+
+    strategy.loadAssociation(function(handle, done) {
+      // custom retrieval implementation
+      loadAssoc(handle, function(err, provider, algorithm, secret) {
+        if (err) { return done(err) }
+        return done(null, provider, algorithm, secret)
+      });
+    });
 
 ## Examples
 
