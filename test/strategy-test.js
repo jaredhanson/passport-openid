@@ -5,7 +5,6 @@ var openid = require('openid');
 var OpenIDStrategy = require('passport-openid/strategy');
 var BadRequestError = require('passport-openid/errors/badrequesterror');
 
-
 vows.describe('OpenIDStrategy').addBatch({
   
   'strategy': {
@@ -172,6 +171,7 @@ vows.describe('OpenIDStrategy').addBatch({
     topic: function() {
       var strategy = new OpenIDStrategy({
           returnURL: 'https://www.example.com/auth/openid/return',
+          profile: true
         },
         function(identifier, profile, done) {
           done(null, { identifier: identifier, displayName: profile.displayName, emails: profile.emails });
@@ -222,6 +222,9 @@ vows.describe('OpenIDStrategy').addBatch({
         assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
       },
       'should parse profile' : function(err, req) {
+        /* This test did not enable the 'profile' setting, so it seemed 
+         * unreasonable to require profile information.  It has now been 
+         * changed to enable profile. */
         assert.equal(req.user.displayName, 'John Doe');
         assert.lengthOf(req.user.emails, 1);
         assert.equal(req.user.emails[0].value, 'username@example.com');
@@ -229,10 +232,63 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy handling an authorized request with provider authentication policy extensions (pape)': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+          pape : { 'maxAuthAge' : 600, 'preferredAuthPolicies' : 'multi-factor multi-factor-physical' }
+        },
+        function(identifier, pape, done) {
+          done(null, { identifier: identifier, pape: pape });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username', 
+                         'auth_policies' : 'none', 'auth_time': new Date() } );
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          req.user = user;
+          self.callback(null, req);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should parse pape' : function(err, req) {
+        assert.lengthOf(req.user.pape.authPolicies, 1);
+        assert.instanceOf(req.user.pape.authTime, Date);
+      },
+    },
+  },  
+  
   'strategy handling an authorized request with attribute exchange extensions': {
     topic: function() {
       var strategy = new OpenIDStrategy({
           returnURL: 'https://www.example.com/auth/openid/return',
+          profile: true
         },
         function(identifier, profile, done) {
           done(null, { identifier: identifier, displayName: profile.displayName, name: profile.name, emails: profile.emails });
@@ -277,6 +333,9 @@ vows.describe('OpenIDStrategy').addBatch({
         assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
       },
       'should parse profile' : function(err, req) {
+        /* This test did not enable the 'profile' setting, so it seemed 
+         * unreasonable to require profile information.  It has now been 
+         * changed to enable profile. */
         assert.equal(req.user.displayName, 'John Doe');
         assert.equal(req.user.name.familyName, 'Doe');
         assert.equal(req.user.name.givenName, 'John');
@@ -297,7 +356,6 @@ vows.describe('OpenIDStrategy').addBatch({
           var identifier = arguments[0];
           var profile = arguments[1];
           var done = arguments[2];
-          
           done(null, { identifier: identifier, displayName: profile.displayName, name: profile.name, emails: profile.emails });
         }
       );
@@ -353,6 +411,7 @@ vows.describe('OpenIDStrategy').addBatch({
     topic: function() {
       var strategy = new OpenIDStrategy({
           returnURL: 'https://www.example.com/auth/openid/return',
+          profile: true,
           passReqToCallback: true
         },
         function(req, identifier, profile, done) {
@@ -402,6 +461,9 @@ vows.describe('OpenIDStrategy').addBatch({
         assert.equal(req.user.foo, 'bar');
       },
       'should parse profile' : function(err, req) {
+        /* This test did not enable the 'profile' setting, so it seemed 
+         * unreasonable to require profile information.  It has now been 
+         * changed to enable profile. */
         assert.equal(req.user.displayName, 'John Doe');
         assert.equal(req.user.name.familyName, 'Doe');
         assert.equal(req.user.name.givenName, 'John');
