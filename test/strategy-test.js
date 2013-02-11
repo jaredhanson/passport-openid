@@ -402,6 +402,67 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy handling an authorized request with profile and provider authentication policy extensions (pape)': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+          profile: true,
+          pape : { 'maxAuthAge' : 600, 'preferredAuthPolicies' : 'multi-factor multi-factor-physical' }
+        },
+        function(identifier, profile, pape, done) {
+          done(null, { identifier: identifier, profile: profile, pape: pape });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true,
+          claimedIdentifier: 'http://jaredhanson.net',
+          firstname: 'Jared',
+          lastname: 'Hanson',
+          email: 'jaredhanson@example.com',
+          auth_time: '2013-02-11T02:01:47Z',
+          auth_policies: 'none' } );
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          req.user = user;
+          self.callback(null, req);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://jaredhanson.net');
+      },
+      'should parse profile' : function(err, req) {
+        assert.equal(req.user.profile.displayName, 'Jared Hanson');
+      },
+      'should parse pape' : function(err, req) {
+        assert.lengthOf(req.user.pape.authPolicies, 1);
+        assert.instanceOf(req.user.pape.authTime, Date);
+      },
+    },
+  },
+  
   'strategy handling an authorized request with attribute exchange extensions using req argument to callback': {
     topic: function() {
       var strategy = new OpenIDStrategy({
