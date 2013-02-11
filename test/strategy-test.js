@@ -463,6 +463,63 @@ vows.describe('OpenIDStrategy').addBatch({
     },
   },
   
+  'strategy handling an authorized request with oauth extensions': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+          oauth: { consumerKey: 'foo', scope: 'https://www.google.com/m8/feeds' }
+        },
+        function(identifier, profile, pape, oauth, done) {
+          done(null, { identifier: identifier, profile: profile, pape: pape, oauth: oauth });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username', 
+                         'request_token' : 'some-secret-token' } );
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          req.user = user;
+          self.callback(null, req);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should not parse profile' : function(err, req) {
+        assert.equal(req.user.profile.displayName, undefined);
+      },
+      'should not parse pape' : function(err, req) {
+        assert.lengthOf(Object.keys(req.user.pape), 0);
+      },
+      'should parse oauth' : function(err, req) {
+        assert.equal(req.user.oauth.requestToken, 'some-secret-token');
+      },
+    },
+  },
+  
   'strategy handling an authorized request with attribute exchange extensions using req argument to callback': {
     topic: function() {
       var strategy = new OpenIDStrategy({
@@ -646,6 +703,64 @@ vows.describe('OpenIDStrategy').addBatch({
       'should parse pape' : function(err, req) {
         assert.lengthOf(req.user.pape.authPolicies, 1);
         assert.instanceOf(req.user.pape.authTime, Date);
+      },
+    },
+  },
+  
+  'strategy handling an authorized request with oauth extensions using req argument to callback': {
+    topic: function() {
+      var strategy = new OpenIDStrategy({
+          returnURL: 'https://www.example.com/auth/openid/return',
+          oauth: { consumerKey: 'foo', scope: 'https://www.google.com/m8/feeds' },
+          passReqToCallback: true
+        },
+        function(req, identifier, profile, pape, oauth, done) {
+          done(null, { identifier: identifier, profile: profile, pape: pape, oauth: oauth });
+        }
+      );
+      
+      // mock
+      strategy._relyingParty.verifyAssertion = function(url, callback) {
+        callback(null, { authenticated: true, claimedIdentifier: 'http://www.example.com/profiles/username', 
+                         'request_token' : 'some-secret-token' } );
+      }
+      
+      return strategy;
+    },
+    
+    'after augmenting with actions': {
+      topic: function(strategy) {
+        var self = this;
+        var req = {};
+        strategy.success = function(user) {
+          req.user = user;
+          self.callback(null, req);
+        }
+        strategy.fail = function() {
+          self.callback(new Error('should not be called'));
+        }
+        
+        req.query = {};
+        req.query['openid.mode'] = 'id_res'
+        process.nextTick(function () {
+          strategy.authenticate(req);
+        });
+      },
+      
+      'should not call fail' : function(err, req) {
+        assert.isNull(err);
+      },
+      'should authenticate' : function(err, req) {
+        assert.equal(req.user.identifier, 'http://www.example.com/profiles/username');
+      },
+      'should not parse profile' : function(err, req) {
+        assert.equal(req.user.profile.displayName, undefined);
+      },
+      'should not parse pape' : function(err, req) {
+        assert.lengthOf(Object.keys(req.user.pape), 0);
+      },
+      'should parse oauth' : function(err, req) {
+        assert.equal(req.user.oauth.requestToken, 'some-secret-token');
       },
     },
   },
