@@ -89,6 +89,7 @@ For a complete, working example, refer to the [signon example](https://github.co
     <tr><th>Strategy</th></tr>
   </thead>
   <tbody>
+     <tr><td><a href="https://github.com/rajaraodv/passport-cloudfoundry-openidconnect">Cloud Foundry UAA (OpenID Connect)</a></td></tr>
     <tr><td><a href="https://github.com/jaredhanson/passport-google">Google</a></td></tr>
     <tr><td><a href="https://github.com/liamcurry/passport-steam">Steam</a></td></tr>
     <tr><td><a href="https://github.com/jaredhanson/passport-yahoo">Yahoo!</a></td></tr>
