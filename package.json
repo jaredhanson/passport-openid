@@ -23,7 +23,7 @@
   "dependencies": {
     "pkginfo": "0.2.x",
     "passport": "~0.1.3",
-    "openid": "0.4.x"
+    "openid": "0.5.x"
   },
   "devDependencies": {
     "vows": "0.6.x"
