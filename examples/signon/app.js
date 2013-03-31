@@ -23,7 +23,7 @@ passport.deserializeUser(function(identifier, done) {
 //   Strategies in passport require a `validate` function, which accept
 //   credentials (in this case, an OpenID identifier), and invoke a callback
 //   with a user object.
-function setNewOpenIdStrategy(req, res, next){
+function setNewOpenIdStrategy(req){
   var host = req.host,
     returnURL = 'http://'+host+':' + port + '/auth/openid/return',
     realm =  'http://'+host+':' + port;
@@ -38,7 +38,6 @@ function setNewOpenIdStrategy(req, res, next){
       });
     }
   ));
-  next();
 }
 
 
@@ -82,8 +81,10 @@ app.get('/login', function(req, res){
 //   provider will redirect the user back to this application at
 //   /auth/openid/return
 app.post('/auth/openid',
-  setNewOpenIdStrategy,
-  passport.authenticate('openid', { failureRedirect: '/login' }),
+  function(req, res, next){
+    setNewOpenIdStrategy(req);
+    passport.authenticate('openid', { failureRedirect: '/login' })(req, res, next);
+  },
   function(req, res) {
     res.redirect('/');
   });
@@ -94,8 +95,10 @@ app.post('/auth/openid',
 //   login page.  Otherwise, the primary route function function will be called,
 //   which, in this example, will redirect the user to the home page.
 app.get('/auth/openid/return',
-  setNewOpenIdStrategy,
-  passport.authenticate('openid', { failureRedirect: '/login' }),
+  function(req, res, next){
+    setNewOpenIdStrategy(req);
+    passport.authenticate('openid', { failureRedirect: '/login' })(req, res, next);
+  },
   function(req, res) {
     res.redirect('/');
   });
