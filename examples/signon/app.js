@@ -44,7 +44,6 @@ passport.use(new OpenIDStrategy({
 
 
 
-var express = require("express");
 var app = express();
 
 // configure Express
