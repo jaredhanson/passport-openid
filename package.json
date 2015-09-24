@@ -30,9 +30,8 @@
   ],
   "main": "./lib/passport-openid",
   "dependencies": {
-    "openid": "^1.0.0",
-    "passport-strategy": "^1.0.0",
-    "pkginfo": "0.2.x"
+    "passport-strategy": "1.x.x",
+    "openid": "1.x.x"
   },
   "devDependencies": {
     "vows": "^0.8.1"
