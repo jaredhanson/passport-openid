@@ -30,7 +30,7 @@
   ],
   "main": "./lib/passport-openid",
   "dependencies": {
-    "openid": "0.5.x",
+    "openid": "^1.0.0",
     "passport-strategy": "^1.0.0",
     "pkginfo": "0.2.x"
   },
@@ -41,6 +41,6 @@
     "test": "NODE_PATH=lib node_modules/.bin/vows test/*-test.js test/**/*-test.js"
   },
   "engines": {
-    "node": ">= 0.6.0"
+    "node": ">= 0.10.0"
   }
 }
