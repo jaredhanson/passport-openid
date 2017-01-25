@@ -19,32 +19,30 @@ passport.deserializeUser(function(identifier, done) {
   done(null, { identifier: identifier });
 });
 
-
-// Use the OpenIDStrategy within Passport.
+// Middleware function to use the OpenIDStrategy within Passport.
 //   Strategies in passport require a `validate` function, which accept
 //   credentials (in this case, an OpenID identifier), and invoke a callback
 //   with a user object.
-passport.use(new OpenIDStrategy({
-    returnURL: 'http://localhost:3000/auth/openid/return',
-    realm: 'http://localhost:3000/'
-  },
-  function(identifier, done) {
-    // asynchronous verification, for effect...
-    process.nextTick(function () {
-      
-      // To keep the example simple, the user's OpenID identifier is returned to
-      // represent the logged-in user.  In a typical application, you would want
-      // to associate the OpenID identifier with a user record in your database,
-      // and return that user instead.
-      return done(null, { identifier: identifier })
-    });
-  }
-));
+function setNewOpenIdStrategy(req){
+  var host = req.host,
+    returnURL = 'http://'+host+':' + port + '/auth/openid/return',
+    realm =  'http://'+host+':' + port;
+  passport.use(new OpenIDStrategy({
+      returnURL: returnURL,
+      realm: realm,
+      profile: true
+    },
+    function(identifier, profile, done) {
+      process.nextTick(function () {
+        return done(null, { identifier: identifier, profile: util.inspect(profile)})
+      });
+    }
+  ));
+}
 
 
-
-
-var app = express.createServer();
+var app = express(),
+  port = 3000;
 
 // configure Express
 app.configure(function() {
@@ -82,8 +80,11 @@ app.get('/login', function(req, res){
 //   the user to their OpenID provider.  After authenticating, the OpenID
 //   provider will redirect the user back to this application at
 //   /auth/openid/return
-app.post('/auth/openid', 
-  passport.authenticate('openid', { failureRedirect: '/login' }),
+app.post('/auth/openid',
+  function(req, res, next){
+    setNewOpenIdStrategy(req);
+    passport.authenticate('openid', { failureRedirect: '/login' })(req, res, next);
+  },
   function(req, res) {
     res.redirect('/');
   });
@@ -93,8 +94,11 @@ app.post('/auth/openid',
 //   request.  If authentication fails, the user will be redirected back to the
 //   login page.  Otherwise, the primary route function function will be called,
 //   which, in this example, will redirect the user to the home page.
-app.get('/auth/openid/return', 
-  passport.authenticate('openid', { failureRedirect: '/login' }),
+app.get('/auth/openid/return',
+  function(req, res, next){
+    setNewOpenIdStrategy(req);
+    passport.authenticate('openid', { failureRedirect: '/login' })(req, res, next);
+  },
   function(req, res) {
     res.redirect('/');
   });
@@ -104,7 +108,7 @@ app.get('/logout', function(req, res){
   res.redirect('/');
 });
 
-app.listen(3000);
+app.listen(port);
 
 
 // Simple route middleware to ensure user is authenticated.
