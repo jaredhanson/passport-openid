@@ -58,7 +58,7 @@ subsequent protocol messages and reduce round trips.  In order to take advantage
 of this, an application must store these associations.  This can be done by
 registering functions with `saveAssociation` and `loadAssociation`.
 
-    strategy.saveAssociation(function(handle, provider, algorithm, secret, expiresIn, done) {
+    strategy.saveAssociation(function(handle, provider, algorithm, secret, expiry_time_in_seconds, done) {
       // custom storage implementation
       saveAssoc(handle, provider, algorithm, secret, expiresIn, function(err) {
         if (err) { return done(err) }
@@ -73,6 +73,8 @@ registering functions with `saveAssociation` and `loadAssociation`.
         return done(null, provider, algorithm, secret)
       });
     });
+
+For more information about associations, see the [documentation in node-openid](https://github.com/havard/node-openid#storing-association-state).
 
 ## Examples
 
