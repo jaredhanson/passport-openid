@@ -1,7 +1,10 @@
 var express = require('express')
   , passport = require('passport')
   , util = require('util')
-  , OpenIDStrategy = require('passport-openid').Strategy;
+  , OpenIDStrategy = require('passport-openid').Strategy
+  , bodyParser = require('body-parser')
+  , session = require('express-session')
+  , cookieParser = require('cookie-parser');
 
 
 // Passport session setup.
@@ -43,25 +46,21 @@ passport.use(new OpenIDStrategy({
 
 
 
+var app = express();
 
-var app = express.createServer();
+// Configure Express
+app.set('views', __dirname + '/views');
+app.set('view engine', 'ejs');
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(cookieParser());
+app.use(session({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
 
-// configure Express
-app.configure(function() {
-  app.set('views', __dirname + '/views');
-  app.set('view engine', 'ejs');
-  app.use(express.logger());
-  app.use(express.cookieParser());
-  app.use(express.bodyParser());
-  app.use(express.methodOverride());
-  app.use(express.session({ secret: 'keyboard cat' }));
-  // Initialize Passport!  Also use passport.session() middleware, to support
-  // persistent login sessions (recommended).
-  app.use(passport.initialize());
-  app.use(passport.session());
-  app.use(app.router);
-  app.use(express.static(__dirname + '/../../public'));
-});
+// Initialize Passport!  Also use passport.session() middleware, to support
+// persistent login sessions (recommended).
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.static(__dirname + '/../../public'));
 
 
 app.get('/', function(req, res){
