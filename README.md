@@ -9,6 +9,12 @@ integrated into any application or framework that supports
 [Connect](http://www.senchalabs.org/connect/)-style middleware, including
 [Express](http://expressjs.com/).
 
+<div align="center">
+
+:heart: [Sponsors](https://www.passportjs.org/sponsors/?utm_source=github&utm_medium=referral&utm_campaign=passport-openid&utm_content=nav-sponsors)
+
+</div>
+
 ## Install
 
     $ npm install passport-openid
