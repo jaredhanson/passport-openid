@@ -31,7 +31,7 @@
   "main": "./lib/passport-openid",
   "dependencies": {
     "passport-strategy": "1.x.x",
-    "openid": "1.x.x"
+    "openid": "2.x.x"
   },
   "devDependencies": {
     "vows": "^0.8.1"
